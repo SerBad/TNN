@@ -93,19 +93,19 @@ ObjectInfo ObjectInfo::FlipX() {
     info.image_width = this->image_width;
     info.image_height = this->image_width;
     info.lines = this->lines;
-    
+
     info.x1 = this->image_width - this->x2;
     info.x2 = this->image_width - this->x1;
     info.y1 = this->y1;
     info.y2 = this->y2;
-    
+
     //key points
     std::vector<std::pair<float, float>> key_points;
     for (auto item : this->key_points) {
         key_points.push_back(std::make_pair(this->image_width - item.first, item.second));
     }
     info.key_points = key_points;
-    
+
     //key points 3d
     std::vector<triple<float, float, float>> key_points_3d;
     for (auto item : this->key_points_3d) {
@@ -123,19 +123,19 @@ ObjectInfo ObjectInfo::AddOffset(float offset_x, float offset_y) {
     info.class_id = this->class_id;
     info.image_width = this->image_width;
     info.image_height = this->image_width;
-    
+
     info.x1 = this->x1 + offset_x;
     info.x2 = this->x2 + offset_x;
     info.y1 = this->y1 + offset_y;
     info.y2 = this->y2 + offset_y;
-    
+
     //key points
     std::vector<std::pair<float, float>> key_points;
     for (auto item : this->key_points) {
         key_points.push_back(std::make_pair(item.first + offset_x, item.second + offset_y));
     }
     info.key_points = key_points;
-    
+
     //key points 3d
     std::vector<triple<float, float, float>> key_points_3d;
     for (auto item : this->key_points_3d) {
@@ -151,53 +151,53 @@ float ObjectInfo::IntersectionRatio(ObjectInfo *obj) {
     if (!obj) {
         return 0;
     }
-    
+
     float area1 = std::abs((this->x2 - this->x1) * (this->y2 - this->y1));
     float area2 = std::abs((obj->x2 - obj->x1) * (obj->y2 - obj->y1));
-    
+
     float x1 = std::max(obj->x1, this->x1);
     float x2 = std::min(obj->x2, this->x2);
     float y1 = std::max(obj->y1, this->y1);
     float y2 = std::min(obj->y2, this->y2);
-    
+
     float area = (x2 > x1 && y2 > y1) ? std::abs((x2 - x1) * (y2 - y1)) : 0;
-    
+
     return area / (area1 + area2 - area);
 }
 
 ObjectInfo ObjectInfo::AdjustToImageSize(int orig_image_height, int orig_image_width) {
     float scale_x = orig_image_width/(float)this->image_width;
     float scale_y = orig_image_height/(float)this->image_height;
-    
+
     ObjectInfo  info_orig;
     info_orig.score = this->score;
     info_orig.class_id = this->class_id;
     info_orig.image_width = orig_image_width;
     info_orig.image_height = orig_image_height;
-    
+
     int x_min = std::min(this->x1, this->x2)*scale_x;
     int x_max = std::max(this->x1, this->x2)*scale_x;
     int y_min = std::min(this->y1, this->y2)*scale_y;
     int y_max = std::max(this->y1, this->y2)*scale_y;
-    
+
     x_min = std::min(std::max(x_min, 0), orig_image_width-1);
     x_max = std::min(std::max(x_max, 0), orig_image_width-1);
     y_min = std::min(std::max(y_min, 0), orig_image_height-1);
     y_max = std::min(std::max(y_max, 0), orig_image_height-1);
-    
+
     info_orig.x1 = x_min;
     info_orig.x2 = x_max;
     info_orig.y1 = y_min;
     info_orig.y2 = y_max;
-    
-    
+
+
     //key points
     std::vector<std::pair<float, float>> key_points;
     for (auto item : this->key_points) {
         key_points.push_back(std::make_pair(item.first*scale_x, item.second*scale_y));
     }
     info_orig.key_points = key_points;
-    
+
     //key points 3d
     std::vector<triple<float, float, float>> key_points_3d;
     for (auto item : this->key_points_3d) {
@@ -207,7 +207,7 @@ ObjectInfo ObjectInfo::AdjustToImageSize(int orig_image_height, int orig_image_w
     }
     info_orig.key_points_3d = key_points_3d;
     info_orig.lines = lines;
-    
+
     return info_orig;
 }
 
@@ -218,10 +218,10 @@ ObjectInfo ObjectInfo::AdjustToViewSize(int view_height, int view_width, int gra
     info.image_width = view_width;
     info.image_height = view_height;
     info.lines = lines;
-    
+
     float view_aspect = view_height/(float)(view_width + FLT_EPSILON);
     float object_aspect = this->image_height/(float)(this->image_width + FLT_EPSILON);
-    
+
     if (gravity == 2) {
         if (view_aspect > object_aspect) {
             float object_aspect_width = view_height / object_aspect;
@@ -356,7 +356,7 @@ bool TNNSDKInput::AddMat(std::shared_ptr<TNN_NS::Mat> mat, std::string name) {
     if (name.empty() || !mat) {
         return false;
     }
-    
+
     mat_map_[name] = mat;
     return true;
 }
@@ -366,7 +366,7 @@ std::shared_ptr<TNN_NS::Mat> TNNSDKInput::GetMat(std::string name) {
     if (name == kTNNSDKDefaultName && mat_map_.size() > 0) {
         return mat_map_.begin()->second;
     }
-    
+
     if (mat_map_.find(name) != mat_map_.end()) {
         mat = mat_map_[name];
     }
@@ -401,72 +401,72 @@ Status TNNSDKSample::GetCommandQueue(void **command_queue) {
 
 Status TNNSDKSample::Resize(std::shared_ptr<TNN_NS::Mat> src, std::shared_ptr<TNN_NS::Mat> dst, TNNInterpType interp_type) {
     Status status = TNN_OK;
-    
+
     void * command_queue = nullptr;
     status = GetCommandQueue(&command_queue);
     if (status != TNN_NS::TNN_OK) {
         LOGE("getCommandQueue failed with:%s\n", status.description().c_str());
         return status;
     }
-    
+
     InterpType type = INTERP_TYPE_NEAREST;
     if(interp_type == TNNInterpNearest){
         type = TNN_NS::INTERP_TYPE_NEAREST;
     } else if(interp_type == TNNInterpLinear) {
         type = TNN_NS::INTERP_TYPE_LINEAR;
     }
-    
+
     ResizeParam param;
     param.type = type;
-    
+
     auto dst_dims = dst->GetDims();
     auto src_dims = src->GetDims();
     param.scale_w = dst_dims[3] / static_cast<float>(src_dims[3]);
     param.scale_h = dst_dims[2] / static_cast<float>(src_dims[2]);
-    
+
     status = MatUtils::Resize(*(src.get()), *(dst.get()), param, command_queue);
     if (status != TNN_NS::TNN_OK){
         LOGE("resize failed with:%s\n", status.description().c_str());
     }
-    
+
     return status;
 }
 
 Status TNNSDKSample::Crop(std::shared_ptr<TNN_NS::Mat> src, std::shared_ptr<TNN_NS::Mat> dst, int start_x, int start_y) {
     Status status = TNN_OK;
-    
+
     void *command_queue = nullptr;
     status = GetCommandQueue(&command_queue);
     if (status != TNN_NS::TNN_OK) {
         LOGE("getCommandQueue failed with:%s\n", status.description().c_str());
         return status;
     }
-    
+
     CropParam param;
     param.top_left_x = start_x;
     param.top_left_y = start_y;
     auto dst_dims = dst->GetDims();
     param.width  = dst_dims[3];
     param.height = dst_dims[2];
-    
+
     status = MatUtils::Crop(*(src.get()), *(dst.get()), param, command_queue);
     if (status != TNN_NS::TNN_OK){
         LOGE("crop failed with:%s\n", status.description().c_str());
     }
-    
+
     return status;
 }
 
 Status TNNSDKSample::WarpAffine(std::shared_ptr<TNN_NS::Mat> src, std::shared_ptr<TNN_NS::Mat> dst, TNNInterpType interp_type, TNNBorderType border_type, float trans_mat[2][3]) {
     Status status = TNN_OK;
-    
+
     void * command_queue = nullptr;
     status = GetCommandQueue(&command_queue);
     if (status != TNN_OK) {
         LOGE("getCommandQueue failed with:%s\n", status.description().c_str());
         return status;
     }
-    
+
     InterpType itype = INTERP_TYPE_NEAREST;
     if (interp_type == TNNInterpNearest){
         itype = INTERP_TYPE_NEAREST;
@@ -486,34 +486,34 @@ Status TNNSDKSample::WarpAffine(std::shared_ptr<TNN_NS::Mat> src, std::shared_pt
     WarpAffineParam param;
     param.interp_type = itype;
     param.border_type = btype;
-    
+
     auto dst_dims = dst->GetDims();
     auto src_dims = src->GetDims();
     memcpy(param.transform, trans_mat, sizeof(float)*2*3);
-    
+
     status = MatUtils::WarpAffine(*(src.get()), *(dst.get()), param, command_queue);
     if (status != TNN_NS::TNN_OK){
         LOGE("warpaffine failed with:%s\n", status.description().c_str());
     }
-    
+
     return status;
 }
 
 Status TNNSDKSample::Copy(std::shared_ptr<TNN_NS::Mat> src, std::shared_ptr<TNN_NS::Mat> dst) {
     Status status = TNN_OK;
-    
+
     void *command_queue = nullptr;
     status = GetCommandQueue(&command_queue);
     if (status != TNN_NS::TNN_OK) {
         LOGE("getCommandQueue failed with:%s\n", status.description().c_str());
         return status;
     }
-    
+
     status = MatUtils::Copy(*(src.get()), *(dst.get()), command_queue);
     if (status != TNN_NS::TNN_OK){
         LOGE("copy failed with:%s\n", status.description().c_str());
     }
-    
+
     return status;
 }
 
@@ -522,14 +522,14 @@ Status TNNSDKSample::CopyMakeBorder(std::shared_ptr<TNN_NS::Mat> src,
                       int top, int bottom, int left, int right,
                                     TNNBorderType border_type, uint8_t border_value) {
     Status status = TNN_OK;
-    
+
     void *command_queue = nullptr;
     status = GetCommandQueue(&command_queue);
     if (status != TNN_NS::TNN_OK) {
         LOGE("getCommandQueue failed with:%s\n", status.description().c_str());
         return status;
     }
-    
+
     CopyMakeBorderParam param;
     param.border_val = border_value;
     param.top = top;
@@ -541,12 +541,12 @@ Status TNNSDKSample::CopyMakeBorder(std::shared_ptr<TNN_NS::Mat> src,
         param.border_type = BORDER_TYPE_EDGE;
     else if (border_type == TNNBorderReflect)
         param.border_type = BORDER_TYPE_REFLECT;
-    
+
     status = MatUtils::CopyMakeBorder(*(src.get()), *(dst.get()), param, command_queue);
     if (status != TNN_NS::TNN_OK){
         LOGE("copy failed with:%s\n", status.description().c_str());
     }
-    
+
     return status;
 }
 
@@ -603,7 +603,7 @@ TNN_NS::Status TNNSDKSample::Init(std::shared_ptr<TNNSDKOption> option) {
     else if (option->compute_units == TNNComputeUnitsNaive) {
         device_type_ = TNN_NS::DEVICE_NAIVE;
     }
-    
+
     //创建实例instance
     {
         TNN_NS::NetworkConfig network_config;
@@ -681,13 +681,13 @@ DimsVector TNNSDKSample::GetInputShape(std::string name) {
     if (instance_) {
         instance_->GetAllInputBlobs(blob_map);
     }
-    
+
     if (kTNNSDKDefaultName == name && blob_map.size() > 0) {
         if (blob_map.begin()->second) {
             shape = blob_map.begin()->second->GetBlobDesc().dims;
         }
     }
-    
+
     if (blob_map.find(name) != blob_map.end() && blob_map[name]) {
         shape = blob_map[name]->GetBlobDesc().dims;
     }
@@ -820,14 +820,14 @@ TNN_NS::Status TNNSDKSample::Predict(std::shared_ptr<TNNSDKInput> input, std::sh
     if (!instance_) {
         return Status(TNNERR_INST_ERR, "TNN instance is null");
     }
-    
+
 #if TNN_SDK_ENABLE_BENCHMARK
     bench_result_.Reset();
     for (int fcount = 0; fcount < bench_option_.forward_count; fcount++) {
         SampleTimer sample_time;
         sample_time.Start();
 #endif
-        
+
         // step 1. set input mat
         auto input_names = GetInputNames();
         if (input_names.size() == 1) {
@@ -856,7 +856,7 @@ TNN_NS::Status TNNSDKSample::Predict(std::shared_ptr<TNNSDKInput> input, std::sh
             return status;
         }
 #endif
-        
+
         // step 2. Forward
         status = instance_->ForwardAsync(nullptr);
         if (status != TNN_NS::TNN_OK) {
@@ -888,20 +888,20 @@ TNN_NS::Status TNNSDKSample::Predict(std::shared_ptr<TNNSDKInput> input, std::sh
                 output->AddMat(output_mat, name);
             }
         }
-  
-        
+
+
 #if TNN_SDK_ENABLE_BENCHMARK
         sample_time.Stop();
         double elapsed = sample_time.GetTime();
         bench_result_.AddTime(elapsed);
 #endif
-        
+
         ProcessSDKOutput(output);
 #if TNN_SDK_ENABLE_BENCHMARK
     }
 #endif
     // Detection done
-    
+
     return status;
 }
 
@@ -1069,7 +1069,7 @@ void Rectangle(void *data_rgba, int image_height, int image_width,
                int x0, int y0, int x1, int y1, float scale_x, float scale_y)
 {
 
-    
+
     RGBA *image_rgba = (RGBA *)data_rgba;
 
     int x_min = std::min(x0, x1) * scale_x;
@@ -1153,19 +1153,19 @@ void Point(void *data_rgba, int image_height, int image_width, int x, int y, flo
 
     x_center = std::min(std::max(0, x_center), image_width  - 1);
     y_center = std::min(std::max(0, y_center), image_height - 1);
-    
+
     x_start = std::min(std::max(0, x_start), image_width - 1);
     x_end   = std::min(std::max(0, x_end), image_width - 1);
     y_start = std::min(std::max(0, y_start), image_height - 1);
     y_end   = std::min(std::max(0, y_end), image_height - 1);
-    
+
     unsigned char color = std::min(std::max(0, int(175 + z*80)), 255);
-    
+
     for(int x = x_start; x<=x_end; ++x) {
         int offset                       = y_center * image_width + x;
         image_rgba[offset]               = {color, 0, color, 0};
     }
-    
+
     for(int y = y_start; y<=y_end; ++y) {
         int offset                       = y * image_width + x_center;
         image_rgba[offset]               = {color, 0, color, 0};

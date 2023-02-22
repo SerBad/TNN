@@ -1,23 +1,23 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "25.0.2"
+    compileSdkVersion 31
+
 
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 22
+        targetSdkVersion 31
         versionCode 1000
         versionName "1.0.0"
 
         externalNativeBuild {
             cmake {
-                cppFlags "-std=c++11 -frtti -fexceptions -lz -DANDROID_ARM_NEON=ON -mfpu=neon"
-                arguments "-DANDROID_STL=c++_shared"
+                cppFlags "-std=c++11 -frtti -fexceptions -lz -DANDROID_ARM_NEON=ON -mfpu=neon -Wl,--exclude-libs,ALL"
+                arguments "-DANDROID_STL=c++_static"
             }
         }
         ndk {
-            abiFilters "arm64-v8a"
+            ndk.abiFilters   'armeabi-v7a', 'arm64-v8a'
         }
 
     }
@@ -38,7 +38,7 @@ android {
         main {
             jniLibs.srcDirs = ['libs', 'src/main/jni/thirdparty/hiai_ddk', '../../../third_party/opencv/Android/OpenCV-android-sdk/sdk/native/libs']
             jni.srcDirs = ['src/main/jni']
-            assets.srcDirs = ['src/main/assets', '../../../model']
+//            assets.srcDirs = ['src/main/assets', '../../../model']
         }
     }
 }
@@ -66,7 +66,7 @@ preBuild.dependsOn(copyFiles)
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:24.2.1'
+ 
 }
 
 
