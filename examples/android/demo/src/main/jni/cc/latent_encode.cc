@@ -80,7 +80,7 @@ JNIEXPORT JNICALL jint TNN_LATENT_ENCODE(init)(JNIEnv *env, jobject thiz, jstrin
             network_config.device_type = TNN_NS::DEVICE_ARM;
         }
 
-        std::vector<int> nchw = {1, 3, 512, 512};
+        std::vector<int> nchw = {1, 3, 256, 256};
         TNN_NS::InputShapesMap input_shapes = {};
         input_shapes.insert(std::pair<std::string, TNN_NS::DimsVector>("modelInput", nchw));
         instance_ = net_->CreateInst(network_config, status, input_shapes);
@@ -124,17 +124,19 @@ JNIEXPORT JNICALL jdoubleArray TNN_LATENT_ENCODE(detectFromImage)(JNIEnv *env, j
     void *sourcePixelscolor;
 
     if (AndroidBitmap_getInfo(env, imageSource, &sourceInfocolor) < 0) {
+        LOGE("detectFromImage fail1 ");
         return env->NewDoubleArray(0);
     }
-
+    LOGE("detectFromImage sourceInfocolor.format %d",  sourceInfocolor.format);
     if (sourceInfocolor.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
         return env->NewDoubleArray(0);
     }
 
     if (AndroidBitmap_lockPixels(env, imageSource, &sourcePixelscolor) < 0) {
+        LOGE("detectFromImage fail2 ");
         return env->NewDoubleArray(0);
     }
-
+    LOGE("detectFromImage image ");
     TNN_NS::DeviceType dt = TNN_NS::DEVICE_ARM;
 //    if (gComputeUnitType == 2) {
 //        dt = TNN_NS::DEVICE_HUAWEI_NPU;
@@ -143,24 +145,26 @@ JNIEXPORT JNICALL jdoubleArray TNN_LATENT_ENCODE(detectFromImage)(JNIEnv *env, j
 //    } else {
 //        dt = TNN_NS::DEVICE_ARM;
 //    }
-    TNN_NS::DimsVector target_dims = {1, 3, 512, 512};
+    TNN_NS::DimsVector target_dims = {1, 3, 256, 256};
     auto input_mat = std::make_shared<TNN_NS::Mat>(dt, TNN_NS::NC_INT32, target_dims, sourcePixelscolor);
     std::shared_ptr<TNN_NS::Mat> output_mat = nullptr;
-//    LOGI(" output_mat.get()1 %d %d ", sourceInfocolor.height, sourceInfocolor.width);
+    LOGI(" output_mat.get()1 %d %d ", sourceInfocolor.height, sourceInfocolor.width);
     TNN_NS::MatConvertParam input_convert_param;
-
+    LOGE("detectFromImage image2 ");
     TNN_NS::Status status = instance_->SetInputMat(input_mat, input_convert_param);
+    LOGE("detectFromImage image3 ");
     instance_->Forward();
+    LOGE("detectFromImage image4 ");
     instance_->GetOutputMat(output_mat);
+    LOGE("detectFromImage image5 ");
     AndroidBitmap_unlockPixels(env, imageSource);
     const double *data = static_cast<double *>(output_mat->GetData());
-//    LOGI(" output_mat.get()5 %f =1= %16f ", ((double) data[1]), ((double) data[45]));
+    LOGI(" output_mat.get()5 %f =1= %16f ", ((double) data[1]), ((double) data[45]));
 //    LOGI(" output_mat.get()5 %f =2= %16f ", ((double) data[3]), ((double) data[70]));
 //    LOGI(" output_mat.get()5 %f =3= %16f ", ((double) data[9]), ((double) data[100]));
     int len = output_mat->GetDim(0) * output_mat->GetDim(1) * output_mat->GetDim(2);
     jdoubleArray result = env->NewDoubleArray(len);
     env->SetDoubleArrayRegion(result, 0, len, data);
-
     return result;
 }
 

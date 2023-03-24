@@ -4,10 +4,8 @@ package com.tencent.tnn.demo;
 import android.graphics.Bitmap;
 
 public class LatentEncode {
-    {
 
-    }
-    public native int init( String modelPath, int computeType);
+    public native int init(String modelPath, int computeType);
 
     public native boolean checkNpu(String modelPath);
 
