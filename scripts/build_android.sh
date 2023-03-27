@@ -1,16 +1,19 @@
 #!/bin/bash
 
-#ABIA32="armeabi-v7a with NEON"
-ABIA32="armeabi-v7a"
+ABIA32="armeabi-v7a with NEON"
+#ABIA32="armeabi-v7a"
 ABIA64="arm64-v8a"
 STL="c++_static"
 #STL="gnustl_static"
-SHARED_LIB="ON"
-ARM="ON"
+SHARED_LIB="ON"  # ON表示编译动态库，OFF表示编译静态库
+ARM="ON" # ON表示编译带有Arm CPU版本的库
 ARM82="ON"
-OPENMP="ON"
-OPENCL="ON"
-#HUAWEI_NPU="ON"
+OPENMP="ON" # ON表示打开OpenMP
+OPENCL="ON" # ON表示编译带有Arm GPU版本的库
+HUAWEI_NPU="OFF"  # ON表示编译带有Arm GPU NPU版本的库
+#SHARING_MEM_WITH_OPENGL=0      # 1表示OpenGL的Texture可以与OpenCL共享
+
+
 if [ -z "$HUAWEI_NPU" ]; then
     HUAWEI_NPU="OFF"
 fi
@@ -19,6 +22,7 @@ DEBUG="OFF"
 INCREMENTAL_COMPILE="OFF"
 SHARING_MEM_WITH_OPENGL=0
 ANDROID_API_LEVEL="android-14"
+ANDROID_NDK="/home/zhou/android/Sdk/ndk/25.2.9519653"
 # check ANDROID_NDK whether set.
 if [ ! -f "$ANDROID_NDK/build/cmake/android.toolchain.cmake" ]; then
    echo -e "Not found: build/cmake/android.toolchain.cmake in ANDROID_NDK:$ANDROID_NDK"

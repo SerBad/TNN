@@ -14,5 +14,8 @@ public class LatentEncode {
      * */
     public native int deinit();
 
-    public native double[] detectFromImage(Bitmap bitmap);
+    public native float[] detectFromImage(Bitmap bitmap);
+
+    public native float[] detectFromImageForFloatArray(float[] bitmap);
+
 }

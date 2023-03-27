@@ -22,10 +22,10 @@ set(TNN_VERSION "${TNN_MAJOR_VERSION}.${TNN_MINOR_VERSION}.${TNN_PATCH_VERSION}.
 
 option(TNN_CPU_ENABLE "Enable Cpu" ON)
 option(TNN_X86_ENABLE  "Enable X86" OFF)
-option(TNN_ARM_ENABLE "Enable Arm" OFF)
-option(TNN_ARM82_ENABLE "Enable Arm82" OFF)
+option(TNN_ARM_ENABLE "Enable Arm" ON)
+option(TNN_ARM82_ENABLE "Enable Arm82" ON)
 option(TNN_METAL_ENABLE "Enable Metal" OFF)
-option(TNN_OPENCL_ENABLE "Enable OpenCL" OFF)
+option(TNN_OPENCL_ENABLE "Enable OpenCL" ON)
 option(TNN_CUDA_ENABLE "Enable CUDA" OFF)
 option(TNN_DSP_ENABLE "Enable DSP" OFF)
 option(TNN_ATLAS_ENABLE "Enable Atlas" OFF)

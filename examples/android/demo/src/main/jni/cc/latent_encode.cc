@@ -63,7 +63,7 @@ JNIEXPORT JNICALL jint TNN_LATENT_ENCODE(init)(JNIEnv *env, jobject thiz, jstrin
             LOGE("instance.net init failed %d", (int) status);
             return status;
         }
-        LOGE("初始化成功");
+        LOGE("初始化成功 %d", (int) status);
         net_ = net;
 
         if (!net_) return 0;
@@ -79,12 +79,14 @@ JNIEXPORT JNICALL jint TNN_LATENT_ENCODE(init)(JNIEnv *env, jobject thiz, jstrin
             network_config.network_type = TNN_NS::NETWORK_TYPE_DEFAULT;
             network_config.device_type = TNN_NS::DEVICE_ARM;
         }
-
+        LOGE("初始化成功1  network_config.device_type %d ", network_config.device_type);
         std::vector<int> nchw = {1, 3, 256, 256};
         TNN_NS::InputShapesMap input_shapes = {};
+        LOGE("初始化成功2");
         input_shapes.insert(std::pair<std::string, TNN_NS::DimsVector>("modelInput", nchw));
+        LOGE("初始化成功3 net_ %d ", net_ != NULL);
         instance_ = net_->CreateInst(network_config, status, input_shapes);
-        LOGE("instance.net CreateInst success %d", (int) status);
+        LOGE("instance.net CreateInst success %d instance_ %d ", (int) status, instance_ != NULL);
     }
     return TNN_NS::TNN_OK;
 }
@@ -119,53 +121,111 @@ JNIEXPORT JNICALL jint TNN_LATENT_ENCODE(deinit)(JNIEnv *env, jobject thiz) {
 }
 
 
-JNIEXPORT JNICALL jdoubleArray TNN_LATENT_ENCODE(detectFromImage)(JNIEnv *env, jobject thiz, jobject imageSource) {
+JNIEXPORT JNICALL jfloatArray TNN_LATENT_ENCODE(detectFromImage)(JNIEnv *env, jobject thiz, jobject imageSource) {
     AndroidBitmapInfo sourceInfocolor;
     void *sourcePixelscolor;
-
+    if (!instance_) {
+        return env->NewFloatArray(0);
+    }
     if (AndroidBitmap_getInfo(env, imageSource, &sourceInfocolor) < 0) {
         LOGE("detectFromImage fail1 ");
-        return env->NewDoubleArray(0);
+        return env->NewFloatArray(0);
     }
-    LOGE("detectFromImage sourceInfocolor.format %d",  sourceInfocolor.format);
+    LOGE("detectFromImage sourceInfocolor.format %d", sourceInfocolor.format);
     if (sourceInfocolor.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
-        return env->NewDoubleArray(0);
+        return env->NewFloatArray(0);
     }
 
     if (AndroidBitmap_lockPixels(env, imageSource, &sourcePixelscolor) < 0) {
         LOGE("detectFromImage fail2 ");
-        return env->NewDoubleArray(0);
+        return env->NewFloatArray(0);
     }
     LOGE("detectFromImage image ");
     TNN_NS::DeviceType dt = TNN_NS::DEVICE_ARM;
-//    if (gComputeUnitType == 2) {
-//        dt = TNN_NS::DEVICE_HUAWEI_NPU;
-//    } else if (gComputeUnitType == 1) {
-//        dt = TNN_NS::DEVICE_OPENCL;
-//    } else {
-//        dt = TNN_NS::DEVICE_ARM;
-//    }
+    if (gComputeUnitType == 2) {
+        dt = TNN_NS::DEVICE_HUAWEI_NPU;
+    } else if (gComputeUnitType == 1) {
+        dt = TNN_NS::DEVICE_OPENCL;
+    } else {
+        dt = TNN_NS::DEVICE_ARM;
+    }
     TNN_NS::DimsVector target_dims = {1, 3, 256, 256};
-    auto input_mat = std::make_shared<TNN_NS::Mat>(dt, TNN_NS::NC_INT32, target_dims, sourcePixelscolor);
+
+    auto input_mat = std::make_shared<TNN_NS::Mat>(dt, TNN_NS::N8UC4, target_dims, sourcePixelscolor);
+
     std::shared_ptr<TNN_NS::Mat> output_mat = nullptr;
-    LOGI(" output_mat.get()1 %d %d ", sourceInfocolor.height, sourceInfocolor.width);
+    LOGE(" output_mat.get()1 %d %d ", sourceInfocolor.height, sourceInfocolor.width);
+    LOGE(" output_mat.get()1 input_mat1  %d %d batch: %d", input_mat->GetWidth(), input_mat->GetHeight(), input_mat->GetBatch());
+    LOGE(" output_mat.get()1 input_mat2  {%d , %d , %d , %d}", input_mat->GetDim(0), input_mat->GetDim(1), input_mat->GetDim(2), input_mat->GetDim(3));
+
     TNN_NS::MatConvertParam input_convert_param;
-    LOGE("detectFromImage image2 ");
-    TNN_NS::Status status = instance_->SetInputMat(input_mat, input_convert_param);
-    LOGE("detectFromImage image3 ");
+    float scale = 2.0 / 255.0;
+    float bias = -1.0;
+    input_convert_param.scale = {scale, scale, scale, scale};
+    input_convert_param.bias = {bias, bias, bias, bias};
+    const uint8_t *input_uint8_t_data = static_cast<uint8_t *>(input_mat->GetData());
+    LOGE(" output_mat.get()1 input_mat3 input_uint8_t_data1   {%f , %f , %f  }", (input_uint8_t_data[0]) * scale + bias, input_uint8_t_data[1] * scale + bias, input_uint8_t_data[2] * scale + bias);
+    LOGE(" output_mat.get()1 input_mat3 input_uint8_t_data2   {%d , %d , %d  }", input_uint8_t_data[0], input_uint8_t_data[1], input_uint8_t_data[2]);
+
+
+    LOGE("detectFromImage image2 input_mat %d instance_ %d ", input_mat != NULL, instance_ != NULL);
+    TNN_NS::Status status = instance_->SetInputMat(input_mat, input_convert_param, "modelInput");
+
+    LOGE("detectFromImage image3  %d", (int) status);
     instance_->Forward();
     LOGE("detectFromImage image4 ");
     instance_->GetOutputMat(output_mat);
     LOGE("detectFromImage image5 ");
     AndroidBitmap_unlockPixels(env, imageSource);
-    const double *data = static_cast<double *>(output_mat->GetData());
-    LOGI(" output_mat.get()5 %f =1= %16f ", ((double) data[1]), ((double) data[45]));
-//    LOGI(" output_mat.get()5 %f =2= %16f ", ((double) data[3]), ((double) data[70]));
-//    LOGI(" output_mat.get()5 %f =3= %16f ", ((double) data[9]), ((double) data[100]));
+    const float *data = static_cast<float *>(output_mat->GetData());
+    LOGE(" output_mat.get()5 %f =1= %16f ", ((double) data[1]), ((double) data[45]));
     int len = output_mat->GetDim(0) * output_mat->GetDim(1) * output_mat->GetDim(2);
-    jdoubleArray result = env->NewDoubleArray(len);
-    env->SetDoubleArrayRegion(result, 0, len, data);
+    jfloatArray result = env->NewFloatArray(len);
+    env->SetFloatArrayRegion(result, 0, len, data);
     return result;
 }
 
+JNIEXPORT JNICALL jfloatArray TNN_LATENT_ENCODE(detectFromImageForFloatArray)(JNIEnv *env, jobject thiz, jfloatArray imageSource) {
+    TNN_NS::DeviceType dt = TNN_NS::DEVICE_ARM;
+    if (gComputeUnitType == 2) {
+        dt = TNN_NS::DEVICE_HUAWEI_NPU;
+    } else if (gComputeUnitType == 1) {
+        dt = TNN_NS::DEVICE_OPENCL;
+    } else {
+        dt = TNN_NS::DEVICE_ARM;
+    }
+    TNN_NS::DimsVector target_dims = {1, 3, 256, 256};
 
+    auto input_mat = std::make_shared<TNN_NS::Mat>(dt, TNN_NS::NCHW_FLOAT, target_dims, env->GetFloatArrayElements(imageSource, JNI_FALSE));
+
+    std::shared_ptr<TNN_NS::Mat> output_mat = nullptr;
+
+    LOGE(" output_mat.get()1 input_mat1  %d %d batch: %d", input_mat->GetWidth(), input_mat->GetHeight(), input_mat->GetBatch());
+    LOGE(" output_mat.get()1 input_mat2  {%d , %d , %d , %d}", input_mat->GetDim(0), input_mat->GetDim(1), input_mat->GetDim(2), input_mat->GetDim(3));
+
+    TNN_NS::MatConvertParam input_convert_param;
+    float scale = 1.0;
+    float bias = 0;
+    input_convert_param.scale = {scale, scale, scale};
+    input_convert_param.bias = {bias, bias, bias};
+    const float *input_data = static_cast<float *>(input_mat->GetData());
+
+    LOGE(" output_mat.get()1 input_mat3 input_data1   {%f , %f , %f  }", (input_data[0]) * scale + bias, input_data[1] * scale + bias, input_data[2] * scale + bias);
+    LOGE(" output_mat.get()1 input_mat3 input_data2   {%f , %f , %f  }", input_data[0], input_data[1], input_data[2]);
+
+    LOGE("detectFromImage image2 input_mat %d instance_ %d ", input_mat != NULL, instance_ != NULL);
+    TNN_NS::Status status = instance_->SetInputMat(input_mat, input_convert_param, "modelInput");
+
+    LOGE("detectFromImage image3  %d", (int) status);
+    instance_->Forward();
+    LOGE("detectFromImage image4 ");
+    instance_->GetOutputMat(output_mat);
+    LOGE("detectFromImage image5 ");
+
+    const float *data = static_cast<float *>(output_mat->GetData());
+    LOGE(" output_mat.get()5 %f =1= %16f ", ((double) data[1]), ((double) data[45]));
+    int len = output_mat->GetDim(0) * output_mat->GetDim(1) * output_mat->GetDim(2);
+    jfloatArray result = env->NewFloatArray(len);
+    env->SetFloatArrayRegion(result, 0, len, data);
+    return result;
+}

@@ -147,3 +147,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# -input_shape
+# modelInput:1,3,256,256
